@@ -1,7 +1,7 @@
 const pg = require('pg')
 var parse = require('pg-connection-string').parse;
 
-var config = parse(process.env.DB_URL || "postgres://localhost/cmsc424");
+var config = parse(process.env.DATABASE_URL || "postgres://localhost/cmsc424");
 
 const pool = new pg.Pool(config);
 
