@@ -7,18 +7,20 @@ module.exports = {
   // setup the tables
   migrate: function() {
     pool.query(`
-      CREATE TABLE IF NOT EXISTS Movie(
-        id serial PRIMARY KEY,
-        TITLE varchar(255) not null
+      CREATE TABLE IF NOT EXISTS DAGR(
+        id varchar(32) PRIMARY KEY,
+        alias varchar(100) not null
+        path varchar(255) not null
+        created datetime 
       );`
       ).then(() => {
 
-        return pool.query(`
-        CREATE TABLE IF NOT EXISTS ACTOR(
-          id serial PRIMARY KEY,
-          NAME VARCHAR(100) NOT NULL
-        )
-        `)
+      return pool.query(`
+      CREATE TABLE IF NOT EXISTS ACTOR(
+        id serial PRIMARY KEY,
+        NAME VARCHAR(100) NOT NULL
+      )
+      `)
 
     }).then(() => {
 
