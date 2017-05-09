@@ -7,6 +7,8 @@ var orm = require('orm');
 const _ = require('underscore')
 var bodyParser = require('body-parser')
 
+const category = require('./category');
+
 app.use(bodyParser.json({type: 'application/*+json'}))
 
 app.use(orm.express(process.env.DATABASE_URL, {
@@ -58,86 +60,13 @@ app.post('/dagr', function (req, res) {
 
 })
 
-app.get('/category', function (req, res) {
+app.get('/category', category.getCategories)
 
-  req
-    .models
-    .db
-    .driver
-    .execQuery('select * from category', (err, result) => {
+app.post('/category', category.createCatgory)
 
-      if (err) {
-        res
-          .status(400)
-          .send(err);
-      } else {
-        res.send(result);
-      }
+app.get('/category/:id/dagr', category.dagrForCategory)
 
-    })
-
-})
-
-app.post('/category', (req, res) => {
-
-  req
-    .models
-    .category
-    .create(req.body, (err, result) => {
-      if (err) {
-        res.send(400, err);
-      } else {
-        res.send(result)
-      }
-    })
-})
-
-app.get('/category/:id/dagr', (req, res) => {
-
-  req
-    .models
-    .db
-    .driver
-    .execQuery("select * from dagr where category_id = ?", [req.params.id], (err, result) => {
-      if (err) {
-        res
-          .status(400)
-          .send(err);
-      } else {
-        res.send(result);
-      }
-    })
-
-})
-
-app.post('/category/:id/dagr/:dagrId', (req, res) => {
-
-  req
-    .models
-    .dagr
-    .get(req.params.dagrId, (err, dagr) => {
-
-      if (err) {
-        res
-          .status(400)
-          .send(err);
-        return;
-      }
-
-      dagr.category_id = id;
-      dagr.save(err => {
-        if (err) {
-          res
-            .status(400)
-            .send(err)
-        } else {
-          res.send(dagr)
-        }
-      })
-
-    })
-
-})
+app.post('/category/:id/dagr/:dagrId', category.attachedDagr)
 
 app.listen(port, function () {
   // require('./db/migration').migrate();
