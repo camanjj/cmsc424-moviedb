@@ -37,7 +37,18 @@ module.exports = {
   dagrFromUrl: function(req, res) {
     scrape(req.query.url).then(function(metadata){
       console.log(metadata);
+      res.send(metadata)
     });
+  },
+
+  dagrBulk: function(req, res) {
+    req.models.dagr.create(req.params.dagrs, (err, result) => {
+      if (err) {
+        res.status(400).send(err)
+      } else {
+        res.send(result)
+      }
+    })
   }
 
 }
