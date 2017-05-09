@@ -3,6 +3,7 @@
 // const pool = require('./db/pool')
 var express = require('express')
 var app = express()
+var cors = require('cors')
 var orm = require('orm');
 const _ = require('underscore')
 var bodyParser = require('body-parser')
@@ -10,6 +11,7 @@ var bodyParser = require('body-parser')
 const category = require('./category');
 
 app.use(bodyParser.json({type: 'application/*+json'}))
+app.use(cors())
 
 app.use(orm.express(process.env.DATABASE_URL, {
   define: function (db, models, next) {
