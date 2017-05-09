@@ -9,6 +9,7 @@ const _ = require('underscore')
 var bodyParser = require('body-parser')
 
 const category = require('./category');
+const dagr = require('./dagr')
 
 app.use(bodyParser.json({type: 'application/*+json'}))
 app.use(cors())
@@ -62,13 +63,17 @@ app.post('/dagr', function (req, res) {
 
 })
 
-app.get('/category', category.getCategories)
+// category endpoints
+app.get('/category', category.getCategories);
+app.post('/category', category.createCatgory);
+app.get('/category/:id/dagr', category.dagrForCategory);
+app.post('/category/:id/dagr/:dagrId', category.attachedDagr);
 
-app.post('/category', category.createCatgory)
-
-app.get('/category/:id/dagr', category.dagrForCategory)
-
-app.post('/category/:id/dagr/:dagrId', category.attachedDagr)
+// dagr endpoints
+app.get('/dagr', dagr.getDagrs);
+app.post('/dagr', dagr.createDagr);
+app.post('/dagr/link', dagr.dagrFromUrl);
+app.delete('/dagr/:id', dagr.deleteDagr)
 
 app.listen(port, function () {
   // require('./db/migration').migrate();
