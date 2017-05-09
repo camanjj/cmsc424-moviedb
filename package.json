@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.5.0",
+    "body-parser": "^1.17.1",
     "exif-parser": "^0.1.9",
     "express": "^4.15.2",
     "html-metadata": "git://github.com/wikimedia/html-metadata.git",
