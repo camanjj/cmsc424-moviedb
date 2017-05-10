@@ -9,8 +9,9 @@ const _ = require('underscore')
 var bodyParser = require('body-parser')
 
 const category = require('./category');
+const dagr = require('./dagr')
 
-app.use(bodyParser.json({type: 'application/*+json'}))
+app.use(bodyParser.json({type: '*/*'}))
 app.use(cors())
 
 app.use(orm.express(process.env.DATABASE_URL, {
@@ -23,11 +24,7 @@ app.use(orm.express(process.env.DATABASE_URL, {
       .hasOne('parent', models.category)
 
     models.dagr = db.define("dagr", {
-      id: {
-        type: 'text',
-        length: 32,
-        key: true
-      },
+      gid: {type:'text', size: 32, unqiue: true, require: true},
       file_name: String,
       file_path: String,
       file_type: String,
@@ -62,13 +59,18 @@ app.post('/dagr', function (req, res) {
 
 })
 
-app.get('/category', category.getCategories)
+// category endpoints
+app.get('/category', category.getCategories);
+app.post('/category', category.createCatgory);
+app.get('/category/:id/dagr', category.dagrForCategory);
+app.post('/category/:id/dagr/:dagrId', category.attachedDagr);
 
-app.post('/category', category.createCatgory)
-
-app.get('/category/:id/dagr', category.dagrForCategory)
-
-app.post('/category/:id/dagr/:dagrId', category.attachedDagr)
+// dagr endpoints
+app.get('/dagr', dagr.getDagrs);
+app.post('/dagr', dagr.createDagr);
+app.get('/dagr/link', dagr.dagrFromUrl);
+app.delete('/dagr/:id', dagr.deleteDagr);
+app.post('/dagrs', dagr.dagrBulk);
 
 app.listen(port, function () {
   // require('./db/migration').migrate();

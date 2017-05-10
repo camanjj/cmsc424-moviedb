@@ -23,7 +23,7 @@ module.exports = {
   },
 
   createCatgory: function (req, res) {
-
+    console.log(req.body);
     req
       .models
       .category
