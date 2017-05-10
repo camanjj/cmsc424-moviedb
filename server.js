@@ -11,7 +11,7 @@ var bodyParser = require('body-parser')
 const category = require('./category');
 const dagr = require('./dagr')
 
-app.use(bodyParser.json({type: 'application/*+json'}))
+app.use(bodyParser.json({type: '*/*'}))
 app.use(cors())
 
 app.use(orm.express(process.env.DATABASE_URL, {
