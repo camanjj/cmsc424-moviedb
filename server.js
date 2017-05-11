@@ -26,11 +26,13 @@ app.use(orm.express(process.env.DATABASE_URL, {
     models.dagr = db.define("dagr", {
       id: {type:'text', size: 32, key:true},
       file_name: String,
-      file_path: String,
+      creator: String,
+      created: Date,
+      modified: Date,
+      path: String,
       file_type: String,
       file_size: 'integer',
       file_alias: String,
-      metadata: Object
     });
     models
       .dagr
@@ -52,12 +54,6 @@ app.use(orm.express(process.env.DATABASE_URL, {
 // create the server
 let port = (process.env.SERVER_PORT || process.env.PORT || 5000)
 
-app.post('/dagr', function (req, res) {
-
-  const dagr = _.pick(req.body, 'dagr')
-  const keywords = _.pick(req.body, 'keywords')
-
-})
 
 // category endpoints
 app.get('/category', category.getCategories);

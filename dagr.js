@@ -2,6 +2,9 @@
 var scrape = require('html-metadata');
 var qOrm = require('q-orm');
 const _ = require('underscore')
+const moment = require('moment')
+const guid = require('guid')
+const request = require('request')
 
 module.exports = {
 
@@ -36,9 +39,42 @@ module.exports = {
   },
 
   dagrFromUrl: function(req, res) {
-    scrape(req.query.url).then(function(metadata){
-      console.log(metadata);
-      res.send(metadata)
+
+    let requestPromise = new Promise((resolve, reject) => {
+
+      request(req.query.url, (error, response, body) => {
+        resolve(response)
+      })
+
+
+    })
+
+    Promise.all([scrape(req.query.url), requestPromise]).then(function(data){
+      
+      const [metadata, response] = data;
+      // const {error, response, body = r
+      // console.log(response)
+      const dagr = {
+        id: guid.create().value,
+        file_name: metadata.general.title,
+        creator: metadata.jsonLd.creator[0] || "",
+        created: moment(metadata.jsonLd.datePublished || null).toDate(),
+        modifed: moment(metadata.jsonLd.dateModified || null).toDate(),
+        path: req.query.url,
+        file_type: 'html',
+        file_size: parseInt(response.headers['content-length']) || 0
+      }
+      
+      req.models.dagr.create(dagr, (err, result) => {
+        if (err) {
+          res.status(400).send(err)
+          return;
+        }
+
+        res.send(result)
+      })
+
+      // res.send(metadata)
     });
   },
 
@@ -119,15 +155,6 @@ module.exports = {
 
         res.send(graph)
       })
-
-      // Promise.all(childrenBlock([dagr]), parentBlock(dagr)).then((results) => {
-      //     let children = _.flatten(results)
-      //     console.log(children)
-      //     res.send(children)
-      //   }).catch(err => {
-      //     console.log(err);
-      //   })
-
 
     })
 
