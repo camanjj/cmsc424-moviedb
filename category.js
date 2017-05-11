@@ -59,18 +59,20 @@ module.exports = {
     req
       .models
       .dagr
-      .get(req.params.dagrId, (err, dagr) => {
+      .get(req.body.dagrId, (err, dagr) => {
 
         if (err) {
+          console.log(err)
           res
             .status(400)
             .send(err);
           return;
         }
 
-        dagr.category_id = id;
+        dagr.category_id = req.params.id;
         dagr.save(err => {
           if (err) {
+            console.log(err)
             res
               .status(400)
               .send(err)

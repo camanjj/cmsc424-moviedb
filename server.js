@@ -24,7 +24,7 @@ app.use(orm.express(process.env.DATABASE_URL, {
       .hasOne('parent', models.category)
 
     models.dagr = db.define("dagr", {
-      gid: {type:'text', size: 32, unqiue: true, require: true},
+      id: {type:'text', size: 32, key:true},
       file_name: String,
       file_path: String,
       file_type: String,
@@ -63,7 +63,7 @@ app.post('/dagr', function (req, res) {
 app.get('/category', category.getCategories);
 app.post('/category', category.createCatgory);
 app.get('/category/:id/dagr', category.dagrForCategory);
-app.post('/category/:id/dagr/:dagrId', category.attachedDagr);
+app.post('/category/:id/dagr', category.attachedDagr);
 
 // dagr endpoints
 app.get('/dagr', dagr.getDagrs);
@@ -71,6 +71,7 @@ app.post('/dagr', dagr.createDagr);
 app.get('/dagr/link', dagr.dagrFromUrl);
 app.delete('/dagr/:id', dagr.deleteDagr);
 app.post('/dagrs', dagr.dagrBulk);
+app.post('/dagr/reach', dagr.reachability);
 
 app.listen(port, function () {
   // require('./db/migration').migrate();
