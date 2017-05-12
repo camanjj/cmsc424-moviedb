@@ -1,17 +1,8 @@
-#1) Determine platform
-#2) Allow user to select files for bulk entry
-#3) For each file:
-	#a) Allow user to name file
-	#b) Generate GUID
-	#c) Grab file meta data with dir/ls
-
-#from tkinter import Tk, BOTH
-#from ttk import Frame, Button, Style
-
 import os, platform, time, json, uuid, requests, datetime
 from tkinter import *
 from tkinter.filedialog import askopenfilenames
 from tkinter.messagebox import showerror
+from requests.exceptions import ConnectionError
 
 class popupWindow(object):
 	def __init__(self, parent, file_info):
@@ -227,13 +218,15 @@ class Bulk():
 
 	def db_push(self, dagr):
 		headers = {u'content-type': u'application/json'}
-
-		req = requests.post('http://127.0.0.1:5000/dagrs', headers = headers, data = json.dumps(dagr))
-
-		if req.status_code == requests.codes.ok:
-			print(dagr['file_alias'], "successfully sent")
+		try:
+			req = requests.post('http://127.0.0.1:5000/dagrs', headers = headers, data = json.dumps(dagr))
+		except ConnectionError:
+			print("Failed to establish a connection to the server")
 		else:
-			print(dagr['file_alias'], "returned", req.status_code)
+			if req.status_code == requests.codes.ok:
+				print(dagr['file_alias'], "successfully sent")
+			else:
+				print(dagr['file_alias'], "returned", req.status_code)
 
 	def exit(self):
 		self.gui.destroy()
