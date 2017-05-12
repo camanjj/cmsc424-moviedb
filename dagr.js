@@ -90,10 +90,13 @@ module.exports = {
   },
 
   deleteDagr: function(req, res) {
-    req.models.dagr.get(req.params.id, (err, dagr) => {
+    req.models.dagr.get(req.body.id, (err, dagr) => {
       dagr.remove((err) => {
-        console.log(err)
-        res.send(err);
+        if (err) {
+        res.status(400).send(err)
+      } else {
+        res.status(204).send()
+      }
       })
 
     })

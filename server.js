@@ -66,7 +66,7 @@ app.post('/category/dagr/remove', category.removeDagrCategory)
 app.get('/dagr', dagr.getDagrs);
 app.post('/dagr', dagr.createDagr);
 app.get('/dagr/link', dagr.dagrFromUrl);
-app.delete('/dagr/:id', dagr.deleteDagr);
+app.post('/dagr/delete', dagr.deleteDagr);
 app.post('/dagrs', dagr.dagrBulk);
 app.post('/dagr/reach', dagr.reachability);
 app.post('/dagr/query', dagr.queryDagrs)
