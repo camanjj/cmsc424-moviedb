@@ -14,12 +14,13 @@ from tkinter.filedialog import askopenfilenames
 from tkinter.messagebox import showerror
 
 class popupWindow(object):
-	def __init__(self, parent, insert):
+	def __init__(self, parent, file_info):
 		top = self.top = Toplevel(parent, height=200, width=100)
 		self.parent = parent
-		self.meta_data = json.loads(insert['meta_data'])
+		self.file_data = json.loads(file_info)
+		self.check = IntVar()
 
-		default = StringVar(top,value=self.meta_data['file_name'])
+		default = StringVar(top,value=self.file_data['file_name'])
 
 		w = self.top.winfo_screenwidth()
 		h = self.top.winfo_screenheight()
@@ -37,8 +38,12 @@ class popupWindow(object):
 		self.b = Button(top,text='Confirm',command=self.cleanup)
 		self.b.pack()
 
+		self.skip_b = Checkbutton(top, text="Skip naming remaining", pady="2", variable=self.check, onvalue=1, offvalue=0)
+		self.skip_b.pack()
+
 	def cleanup(self):
 		self.parent.temp_alias = self.e.get()
+		self.parent.skip = self.check.get()
 		self.top.destroy()
 
 class Bulk():
@@ -47,6 +52,7 @@ class Bulk():
 		self.gui = Tk()
 		self.files = {}
 		self.selected = []
+		self.gui.skip = 0
 
 		self.design_gui()
 		self.start_gui()
@@ -136,7 +142,9 @@ class Bulk():
 		del self.selected[:]
 
 	def push_to_db(self):
+		self.gui.skip = 0
 		for i in self.files:
+			print(self.gui.skip)
 			try:
 			    st = os.stat(self.files[i])
 			except IOError:
@@ -145,31 +153,36 @@ class Bulk():
 				file_data = {}
 				db_insert = {}
 
+				file_data['id'] = str(uuid.uuid1())
+				file_data['modified'] = st.st_atime
+				file_data['created'] = st.st_ctime
+				file_data['creator'] = self.get_owner(self.files[i])
+				file_data['path'] = self.files[i]
+
 				file_data['file_size'] = st.st_size
-				file_data['last_access'] = st.st_atime
-				file_data['creation_time'] = st.st_ctime
 				file_data['file_name'] = i
-				file_data['file_path'] = self.files[i]
-				file_data['file_owner'] = self.get_owner(self.files[i])
+				file_data['file_type'] = i.split('.')[1]
+				
+				file_data['parent_id'] = None
+				file_data['category_id'] = None
+				
+				self.gui.temp_alias = i
 
-				file_json = json.dumps(file_data)
+				if self.gui.skip == 0:
+					self.popup(json.dumps(file_data))
 
-				db_insert['id'] = uuid.uuid1()
-				db_insert['meta_data'] = file_json
-
-				self.popup(db_insert)
-
-				temp = json.loads(db_insert['meta_data'])
-				temp['alias'] = self.gui.temp_alias
-
-				db_insert['meta_data'] = json.dumps(temp)
+				file_data['alias'] = self.gui.temp_alias
 
 				lb = self.frame.lb
 				index = lb.get(0,END).index(i)
 				lb.delete(index)
 
-				print(db_insert)
-				self.db_push(db_insert)
+				#db_insert['params'] = {}
+				db_insert['dagrs'] = file_data
+				db_json = json.dumps(db_insert)
+				print(db_json)
+				self.db_push(db_json)
+
 		self.files.clear()
 
 	def clear_list(self):
@@ -188,7 +201,6 @@ class Bulk():
 		if self.platform == 'Windows':
 			clean_path = path.replace('/','\\')
 			command = 'dir /q "%s"' % clean_path
-			#print(command)
 			
 			info = os.popen(command)
 			
@@ -198,18 +210,29 @@ class Bulk():
 			return info_split[-12]
 
 		elif self.platform == 'Linux':
-			print('unix')
+			#print('unix')
 			clean_path = path.replace('\\','/')
 			command = 'ls -l "%s"' % clean_path
-			print(command)
+			
+			info = os.popen(command)
+			
+			info_split = info.read().split()
+			
+			info.close()
+			
+			return info_split[-5]
 
 	def popup(self, insert):
 		self.w=popupWindow(self.gui, insert)
 		self.gui.wait_window(self.w.top)
 		print(self.gui.temp_alias)
 
-	def db_push(self, data):
-		print(data)
+	def db_push(self, dagr):
+		req = requests.post('http://127.0.0.1:5000/dagrs', headers = {}, data = dagr)
+
+		#if req.status_code == requests.codes.ok:
+			#req.json()
+			#print(req)
 
 	def exit(self):
 		self.gui.destroy()
