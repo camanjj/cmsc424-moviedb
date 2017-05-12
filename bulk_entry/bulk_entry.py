@@ -233,7 +233,7 @@ class Bulk():
 		if req.status_code == requests.codes.ok:
 			print(dagr['file_alias'], "successfully sent")
 		else:
-			print(req.status_code)
+			print(dagr['file_alias'], "returned", req.status_code)
 
 	def exit(self):
 		self.gui.destroy()
