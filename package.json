@@ -14,11 +14,15 @@
     "cors": "^2.8.3",
     "exif-parser": "^0.1.9",
     "express": "^4.15.2",
+    "guid": "0.0.12",
     "html-metadata": "git://github.com/wikimedia/html-metadata.git",
+    "moment": "^2.18.1",
     "orm": "^3.2.3",
     "orm-transaction": "0.0.2",
     "pg": "^6.1.5",
     "pg-connection-string": "^0.1.3",
+    "q-orm": "0.0.3",
+    "request": "^2.81.0",
     "underscore": "^1.8.3",
     "x-ray": "^2.3.2"
   }

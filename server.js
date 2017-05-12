@@ -24,13 +24,15 @@ app.use(orm.express(process.env.DATABASE_URL, {
       .hasOne('parent', models.category)
 
     models.dagr = db.define("dagr", {
-      gid: {type:'text', size: 32, unqiue: true, require: true},
+      id: {type:'text', size: 32, key:true},
       file_name: String,
-      file_path: String,
+      creator: String,
+      created: Date,
+      modified: Date,
+      path: String,
       file_type: String,
       file_size: 'integer',
       file_alias: String,
-      metadata: Object
     });
     models
       .dagr
@@ -52,25 +54,23 @@ app.use(orm.express(process.env.DATABASE_URL, {
 // create the server
 let port = (process.env.SERVER_PORT || process.env.PORT || 5000)
 
-app.post('/dagr', function (req, res) {
-
-  const dagr = _.pick(req.body, 'dagr')
-  const keywords = _.pick(req.body, 'keywords')
-
-})
 
 // category endpoints
 app.get('/category', category.getCategories);
 app.post('/category', category.createCatgory);
 app.get('/category/:id/dagr', category.dagrForCategory);
-app.post('/category/:id/dagr/:dagrId', category.attachedDagr);
+app.post('/category/:id/dagr', category.attachedDagr);
+app.post('/category/dagr/remove', category.removeDagrCategory)
 
 // dagr endpoints
 app.get('/dagr', dagr.getDagrs);
 app.post('/dagr', dagr.createDagr);
 app.get('/dagr/link', dagr.dagrFromUrl);
-app.delete('/dagr/:id', dagr.deleteDagr);
+app.post('/dagr/delete', dagr.deleteDagr);
 app.post('/dagrs', dagr.dagrBulk);
+app.post('/dagr/reach', dagr.reachability);
+app.post('/dagr/query', dagr.queryDagrs)
+app.get('/dagr/orphans', dagr.sterileQuery)
 
 app.listen(port, function () {
   // require('./db/migration').migrate();
