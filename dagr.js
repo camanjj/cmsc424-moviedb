@@ -5,6 +5,11 @@ const _ = require('underscore')
 const moment = require('moment')
 const guid = require('guid')
 const request = require('request')
+var osmosis = require('osmosis'); 
+const scrapeIt = require("scrape-it");
+var Xray = require('x-ray')
+var x = Xray()
+
 
 const reachability = (req, dagr) => {
 
@@ -104,52 +109,123 @@ module.exports = {
 
   dagrFromUrl: function(req, res) {
 
-    let requestPromise = new Promise((resolve, reject) => {
-
-      request(req.query.url, (error, response, body) => {
-        resolve(response)
+    let requestPromise = (url) => { 
+      return new Promise((resolve, reject) => {
+        request(url, (error, response, body) => {
+          console.log('request promise')
+          resolve(response)
+        })
       })
+    }
 
+    const osmosisBlock = (url) => {
+      return new Promise((resolve, reject) => {
+        osmosis
+        .get(url)
+        .find('body a')
+        .data(listing => {
+          // console.log(listing)
+          resolve(listing)
+        })
+      })
+    }
 
+    const scrapeBlock = (url, parentId, getChildren) => {
+
+      return Promise.all([scrape(url), requestPromise(url)], osmosisBlock(url)).then( function(data){
+        
+        var [metadata, response, scrape] = data;
+        // const {error, response, body = r
+        // console.log(scrape)
+
+        if(Array.isArray(metadata.jsonLd)) {
+          metadata.jsonLd = metadata.jsonLd[1]
+        }
+        // console.log(metadata)
+
+        const dagr = {
+          id: guid.create().value,
+          file_name: metadata.general.title,
+          file_alias: metadata.general.title,
+          creator: _.has(metadata.jsonLd, 'creator') ? metadata.jsonLd.creator[0] : (_.has(metadata.jsonLd, 'author') ? metadata.jsonLd.author.name : null) ,
+          created: _.has(metadata.jsonLd,'datePublished') ? moment(metadata.jsonLd.datePublished).toDate() : new Date(),
+          modified: _.has(metadata.jsonLd, 'dateModified') ? moment(metadata.jsonLd.dateModified).toDate() : new Date(),
+          path: req.query.url,
+          file_type: 'html',
+          file_size: parseInt(response.headers['content-length']) || 0,
+          parent_id: parentId
+        }
+        
+        return new Promise((resolve, reject) => {
+          // check for dups
+          req.models.dagr.find({path: url}, (err, result) => {
+            if (err) {
+              req.models.dagr.create(dagr, (err, result) => {
+                if (err) {
+                  // res.status(400).send(err)
+                  reject(err)
+                  return;
+                }
+
+                if (getChildren == true) {
+                  // return scrapeBlock()
+                  return resolve(result)
+                } else {
+                  return resolve(result)
+                }
+                // res.send(result)
+                })
+            } else {
+              return resolve(result)
+            }
+
+          })
+
+          
+
+        })
+        
+
+      });
+
+    }
+
+    scrapeBlock(req.query.url, null, false).then(() => {
+      req.models.db.driver.execQuery('select * from dagr', (err, result) => {
+        res.send(result);
+      })
     })
 
-    Promise.all([scrape(req.query.url), requestPromise]).then(function(data){
-      
-      const [metadata, response] = data;
-      // const {error, response, body = r
-      // console.log(response)
-      const dagr = {
-        id: guid.create().value,
-        file_name: metadata.general.title,
-        creator: metadata.jsonLd.creator[0] || "",
-        created: moment(metadata.jsonLd.datePublished || null).toDate(),
-        modified: moment(metadata.jsonLd.dateModified || null).toDate(),
-        path: req.query.url,
-        file_type: 'html',
-        file_size: parseInt(response.headers['content-length']) || 0
-      }
-      
-      req.models.dagr.create(dagr, (err, result) => {
-        if (err) {
-          res.status(400).send(err)
-          return;
-        }
-
-        res.send(result)
-      })
-
-      // res.send(metadata)
-    });
   },
 
   dagrBulk: function(req, res) {
-    req.models.dagr.create(req.body, (err, result) => {
-      if (err) {
-        res.status(400).send(err)
-      } else {
-        res.send(result)
-      }
+
+    // handle duplicate paths
+
+    const checkAndInsertBlock = (data) => new Promise((resolve, reject) => {
+        req.models.dagr.find({path: url}, (err, result) => {
+          if (err) {
+            // not found so add the current
+            req.models.dagr.create(data, (err, result) => {
+              resolve(result)
+            })
+          }
+        })
     })
+
+    const dagrsToAdd = req.body;
+    Promise.all(dagrsToAdd.map((val) => checkAndInsertBlock(val))).then(result => {
+      console.log(result)
+      res.send(result)
+    })
+
+    // req.models.dagr.create(req.body, (err, result) => {
+    //   if (err) {
+    //     res.status(400).send(err)
+    //   } else {
+    //     res.send(result)
+    //   }
+    // })
   },
 
   reachability: function(req, res) {
