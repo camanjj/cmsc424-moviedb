@@ -8,7 +8,7 @@
 #from tkinter import Tk, BOTH
 #from ttk import Frame, Button, Style
 
-import os, platform, time, json, uuid, requests
+import os, platform, time, json, uuid, requests, datetime
 from tkinter import *
 from tkinter.filedialog import askopenfilenames
 from tkinter.messagebox import showerror
@@ -153,8 +153,8 @@ class Bulk():
 				db_insert = {}
 
 				file_data['id'] = str(uuid.uuid1())
-				file_data['modified'] = st.st_atime
-				file_data['created'] = st.st_ctime
+				file_data['modified'] = str(datetime.datetime.fromtimestamp(st.st_mtime))
+				file_data['created'] = str(datetime.datetime.fromtimestamp(st.st_ctime))
 				file_data['creator'] = self.get_owner(self.files[i])
 				file_data['path'] = self.files[i]
 
@@ -174,7 +174,7 @@ class Bulk():
 				if self.gui.skip == 0:
 					self.popup(json.dumps(file_data))
 
-				file_data['alias'] = self.gui.temp_alias
+				file_data['file_alias'] = self.gui.temp_alias
 
 				lb = self.frame.lb
 				index = lb.get(0,END).index(i)
@@ -224,7 +224,6 @@ class Bulk():
 	def popup(self, insert):
 		self.w=popupWindow(self.gui, insert)
 		self.gui.wait_window(self.w.top)
-		print(self.gui.temp_alias)
 
 	def db_push(self, dagr):
 		headers = {u'content-type': u'application/json'}
@@ -232,7 +231,9 @@ class Bulk():
 		req = requests.post('http://127.0.0.1:5000/dagrs', headers = headers, data = json.dumps(dagr))
 
 		if req.status_code == requests.codes.ok:
-			print(dagr['alias'], "successfully sent")
+			print(dagr['file_alias'], "successfully sent")
+		else:
+			print(req.status_code)
 
 	def exit(self):
 		self.gui.destroy()
