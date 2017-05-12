@@ -70,6 +70,7 @@ app.delete('/dagr/:id', dagr.deleteDagr);
 app.post('/dagrs', dagr.dagrBulk);
 app.post('/dagr/reach', dagr.reachability);
 app.post('/dagr/query', dagr.queryDagrs)
+app.get('/dagr/orphans', dagr.sterileQuery)
 
 app.listen(port, function () {
   // require('./db/migration').migrate();

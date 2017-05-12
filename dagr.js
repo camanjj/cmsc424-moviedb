@@ -6,6 +6,67 @@ const moment = require('moment')
 const guid = require('guid')
 const request = require('request')
 
+const reachability = (req, dagr) => {
+
+    const childrenBlock = (list, exclude) => {
+
+      const actionBlock = (dagr) => {
+        // console.log(dagr)
+        return new Promise((resolve, reject) => {
+          req.models.dagr.find({parent_id: dagr.id}, (err, children) => {
+            if (!children || children.length == 0) {
+              resolve([])
+            } else {
+              children = children.filter(val => { if (!exclude) {return true}  return val.id !== exclude.id})
+              var mappings = children.map(val => actionBlock(val))
+              mappings.push(children)
+              resolve(Promise.all(mappings))
+            }
+          })
+        })
+      }
+
+      return Promise.all(list.map(val => actionBlock(val)))
+
+    }
+
+    const parentBlock = (root) => {
+
+      const innerBlock = (dagr) => {
+      // if there are no parents return nothing
+        if (!dagr.parent_id || dagr.parent_id === null) {
+          let d = [childrenBlock([dagr], root)]
+          if (dagr.id !== root.id) d.push(dagr)
+          return Promise.all(d);
+        }
+
+        const parentPromise = new Promise((resolve, reject) => {
+          req.models.dagr.get(dagr.parent_id, (err, result) => {
+            resolve(innerBlock(result))
+          })
+        })
+
+        // get the parents resusively, and the current dagr children
+        return Promise.all([parentPromise, childrenBlock([dagr], root) ])
+      }
+
+      return innerBlock(root)
+
+    }
+    var all = []
+    return childrenBlock([dagr]).then((children) => {
+        all.push(children)
+        return parentBlock(dagr)
+      }).then((parents) => {
+        all.push(parents);
+        var graph = _.flatten(all)
+        graph = _.uniq(graph, (item) => item.id)
+
+        return Promise.resolve(graph)
+      })
+  
+}
+
 module.exports = {
 
   getDagrs: function(req, res) {
@@ -144,17 +205,21 @@ module.exports = {
       console.log(err)
       let all = []
 
-      childrenBlock([dagr]).then((children) => {
-        all.push(children)
-        return parentBlock(dagr)
-      }).then((parents) => {
-        console.log(parents)
-        all.push(parents);
-        var graph = _.flatten(all)
-        graph = _.uniq(graph, (item) => item.id)
-
-        res.send(graph)
+      reachability(req, dagr).then((result) => {
+        res.send(result)
       })
+
+      // childrenBlock([dagr]).then((children) => {
+      //   all.push(children)
+      //   return parentBlock(dagr)
+      // }).then((parents) => {
+      //   console.log(parents)
+      //   all.push(parents);
+      //   var graph = _.flatten(all)
+      //   graph = _.uniq(graph, (item) => item.id)
+
+      //   res.send(graph)
+      // })
 
     })
 
@@ -213,6 +278,22 @@ module.exports = {
       console.log(err)
       console.log(result)
       res.send(result)
+    })
+
+
+  },
+
+  sterileQuery: function(req, res) {
+
+    req.models.dagr.all((err, allDagrs) => {
+
+      Promise.all(allDagrs.map(val => { return new Promise((resolve, reject) =>{ reachability(req, val).then(related => { resolve({entry: val, related: related})  }) })})).then((results) => {
+        console.log(results)
+        const orphans = results.filter((val) => val.related.length == 0).map(val => val.entry)
+        res.send(orphans)
+
+      })
+
     })
 
 
