@@ -144,7 +144,6 @@ class Bulk():
 	def push_to_db(self):
 		self.gui.skip = 0
 		for i in self.files:
-			print(self.gui.skip)
 			try:
 			    st = os.stat(self.files[i])
 			except IOError:
@@ -161,8 +160,12 @@ class Bulk():
 
 				file_data['file_size'] = st.st_size
 				file_data['file_name'] = i
-				file_data['file_type'] = i.split('.')[1]
-				
+
+				if "." in file_data['file_name']:
+					file_data['file_type'] = i.split('.')[-1]
+				else:
+					file_data['file_type'] = None
+
 				file_data['parent_id'] = None
 				file_data['category_id'] = None
 				
@@ -177,11 +180,7 @@ class Bulk():
 				index = lb.get(0,END).index(i)
 				lb.delete(index)
 
-				#db_insert['params'] = {}
-				db_insert['dagrs'] = file_data
-				db_json = json.dumps(db_insert)
-				print(db_json)
-				self.db_push(db_json)
+				self.db_push(file_data)
 
 		self.files.clear()
 
@@ -228,11 +227,12 @@ class Bulk():
 		print(self.gui.temp_alias)
 
 	def db_push(self, dagr):
-		req = requests.post('http://127.0.0.1:5000/dagrs', headers = {}, data = dagr)
+		headers = {u'content-type': u'application/json'}
 
-		#if req.status_code == requests.codes.ok:
-			#req.json()
-			#print(req)
+		req = requests.post('http://127.0.0.1:5000/dagrs', headers = headers, data = json.dumps(dagr))
+
+		if req.status_code == requests.codes.ok:
+			print(dagr['alias'], "successfully sent")
 
 	def exit(self):
 		self.gui.destroy()

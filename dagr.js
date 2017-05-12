@@ -42,7 +42,7 @@ module.exports = {
   },
 
   dagrBulk: function(req, res) {
-    req.models.dagr.create(req.params.dagrs, (err, result) => {
+    req.models.dagr.create(req.body, (err, result) => {
       if (err) {
         res.status(400).send(err)
       } else {
