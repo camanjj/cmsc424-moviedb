@@ -59,7 +59,7 @@ module.exports = {
         file_name: metadata.general.title,
         creator: metadata.jsonLd.creator[0] || "",
         created: moment(metadata.jsonLd.datePublished || null).toDate(),
-        modifed: moment(metadata.jsonLd.dateModified || null).toDate(),
+        modified: moment(metadata.jsonLd.dateModified || null).toDate(),
         path: req.query.url,
         file_type: 'html',
         file_size: parseInt(response.headers['content-length']) || 0
@@ -156,6 +156,63 @@ module.exports = {
         res.send(graph)
       })
 
+    })
+
+
+  },
+
+  queryDagrs: function(req, res) {
+
+    const queryData = req.body
+    var constraints = []
+    console.log(queryData)
+
+    // handle the created date constraints
+    if (queryData.created) {
+      if (_.has(queryData.created, 'after') && queryData.created.after) {
+        constraints.push(`created >= '${moment(queryData.created.after).format("YYYY-MM-DD HH:mm:ss")}'`)
+      }
+      if (_.has(queryData.created,'before') && queryData.created.before) {
+        constraints.push(`created <= '${moment(queryData.created.before).format("YYYY-MM-DD HH:mm:ss")}'`)
+      }
+    }
+
+    // handle the modified date constraints
+    if (queryData.modified) {
+      if (_.has(queryData.modified, 'after') && queryData.modified.after) {
+        constraints.push(`modified >= '${moment(queryData.modified.after).format("YYYY-MM-DD HH:mm:ss")}'`)
+      }
+      if (_.has(queryData.modified, 'before') && queryData.modified.before) {
+        constraints.push(`modified <= '${moment(queryData.modified.before).format("YYYY-MM-DD HH:mm:ss")}'`)
+      }
+    }
+
+    // creator contraint
+    if (_.has(queryData,'author') && queryData.author) {
+      constraints.push(`creator = ${queryData.author}`)
+    }
+
+    // file size constraint
+    if (queryData.fileSize) {
+      if (_.has(queryData.fileSize, 'low') && queryData.fileSize.low) {
+        constraints.push(`file_size >= ${queryData.fileSize.low}`)
+      }
+      if (_.has(queryData.fileSize,'high') && queryData.fileSize.high) {
+        constraints.push(`file_size <= ${queryData.fileSize.high}`)
+      }
+    }
+
+    // file type constraint
+    if (_.has(queryData, 'fileType') && queryData.fileType) {
+      constraints.push(`file_type = ${queryData.fileType}`)
+    }
+
+    const constraintString = constraints.length == 0 ? "" : "where " + constraints.join(' AND ');
+    console.log(constraintString)
+    req.models.db.driver.execQuery('select * from dagr ' + constraintString , [], (err, result) => {
+      console.log(err)
+      console.log(result)
+      res.send(result)
     })
 
 

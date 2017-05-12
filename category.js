@@ -83,6 +83,24 @@ module.exports = {
 
       })
 
+  },
+
+  removeDagrCategory: function (req, res) {
+
+    req.models.dagr.get(req.body.dagrId, (err, dagr) => {
+
+      dagr.category_id = null;
+      dagr.save(err => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err)
+        } else {
+          res.send(dagr);
+        }
+      })
+
+    })
+
   }
 
 }

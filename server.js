@@ -60,6 +60,7 @@ app.get('/category', category.getCategories);
 app.post('/category', category.createCatgory);
 app.get('/category/:id/dagr', category.dagrForCategory);
 app.post('/category/:id/dagr', category.attachedDagr);
+app.post('/category/dagr/remove', category.removeDagrCategory)
 
 // dagr endpoints
 app.get('/dagr', dagr.getDagrs);
@@ -68,6 +69,7 @@ app.get('/dagr/link', dagr.dagrFromUrl);
 app.delete('/dagr/:id', dagr.deleteDagr);
 app.post('/dagrs', dagr.dagrBulk);
 app.post('/dagr/reach', dagr.reachability);
+app.post('/dagr/query', dagr.queryDagrs)
 
 app.listen(port, function () {
   // require('./db/migration').migrate();
